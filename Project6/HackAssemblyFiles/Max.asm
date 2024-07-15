@@ -7,24 +7,24 @@
 // Usage: Before executing, put two values in R0 and R1.
 
   // D = R0 - R1
-  @0
+  @R0
   D=M
   @R1
   D=D-M
   // If (D > 0) goto ITSR0
-  @ITSR0
+  @ITSR0//This is it
   D;JGT
   // Its R1
   @R1
   D=M
   @OUTPUT_D
   0;JMP
-(ITSR0)
-  @R0  // another test
+(ITSR0)//Testing
+  @R0
   D=M
 (OUTPUT_D)
   @R2
-  M=D  // This
+  M=D
 (END)
   @END
   0;JMP

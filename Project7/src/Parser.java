@@ -3,6 +3,9 @@ import java.io.*;
 public class Parser {
     /** Reads VM commands line by line and sends it to codewriter for translation and writing */
     public static void start(String fileName) {
+        CodeTranslator.initialiseBaseAddress();
+        CodeTranslator.fileName = fileName.substring(fileName.lastIndexOf(File.separatorChar)+1, fileName.lastIndexOf('.'));
+
         try {
             String line;
             FileReader fr = new FileReader(fileName);
@@ -12,9 +15,6 @@ public class Parser {
             CodeTranslator.bw = new BufferedWriter(fw);
 
             while ((line = br.readLine()) != null) {
-                CodeTranslator.bw.write("//" + line);
-                CodeTranslator.bw.newLine();
-
                 CodeTranslator.translate(parseCommand(line));
             }
 
@@ -28,7 +28,12 @@ public class Parser {
 
     /** Given a string returns an array of strings separating different words of a command */
     private static String[] parseCommand(String command) {
-        return command.stripLeading().split("\\s+", 3);
+        int index = command.indexOf("//");
 
+        if (index == -1) {
+            return command.stripLeading().split("\\s+", 3);
+        } else {
+            return command.substring(0, index).stripLeading().split(" +", 3);
+        }
     }
 }
