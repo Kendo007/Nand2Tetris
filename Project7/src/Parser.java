@@ -2,38 +2,39 @@ import java.io.*;
 
 public class Parser {
     /** Reads VM commands line by line and sends it to codewriter for translation and writing */
-    public static void start(String fileName) {
+    public static void start(String file) throws IOException {
         CodeTranslator.initialiseBaseAddress();
-        CodeTranslator.fileName = fileName.substring(fileName.lastIndexOf(File.separatorChar)+1, fileName.lastIndexOf('.'));
 
-        try {
-            String line;
-            FileReader fr = new FileReader(fileName);
-            BufferedReader br = new BufferedReader(fr);
+        File f = new File(file);
 
-            FileWriter fw = new FileWriter(fileName.substring(0, fileName.lastIndexOf(".")) + ".asm");
+        if (f.isDirectory()) {
+            FileWriter fw = new FileWriter(file + ".asm");
             CodeTranslator.bw = new BufferedWriter(fw);
+            writeInit();
 
-            while ((line = br.readLine()) != null) {
-                CodeTranslator.translate(parseCommand(line));
+            for (String fileName : f.list()) {
+                CodeTranslator c = new CodeTranslator();
+                c.start(file + File.separatorChar + fileName);
             }
 
-            br.close(); fr.close();
             CodeTranslator.bw.close(); fw.close();
+        } else {
+            FileWriter fw = new FileWriter(file.substring(0, file.lastIndexOf(".")) + ".asm");
+            CodeTranslator.bw = new BufferedWriter(fw);
 
-        } catch (IOException e) {
-            e.printStackTrace();
+            CodeTranslator c = new CodeTranslator();
+            c.start(file);
+
+            CodeTranslator.bw.close(); fw.close();
         }
+
     }
 
-    /** Given a string returns an array of strings separating different words of a command */
-    private static String[] parseCommand(String command) {
-        int index = command.indexOf("//");
-
-        if (index == -1) {
-            return command.stripLeading().split("\\s+", 3);
-        } else {
-            return command.substring(0, index).stripLeading().split(" +", 3);
-        }
+    private static void writeInit() throws IOException {
+        CodeTranslator.write("@256");
+        CodeTranslator.write("D=A");
+        CodeTranslator.write("@SP");
+        CodeTranslator.write("M=D");
+        CodeTranslator.writeCall(new String[]{"call", "Sys.init", "0"});
     }
 }
