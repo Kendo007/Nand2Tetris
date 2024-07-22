@@ -32,8 +32,7 @@ A=M-1
 M=D
 // add 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 M=D+M
@@ -53,8 +52,7 @@ A=M-1
 M=D
 // add 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 M=D+M
@@ -70,12 +68,14 @@ A=M-1
 M=D
 // sub 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 M=M-D
 // return 
+@RETURN
+0;JMP
+(RETURN)
 @LCL
 D=M
 @endframe
@@ -98,26 +98,22 @@ D=M
 @SP
 M=D+1
 @endframe
-M=M-1
-A=M
+AM=M-1
 D=M
 @THAT
 M=D
 @endframe
-M=M-1
-A=M
+AM=M-1
 D=M
 @THIS
 M=D
 @endframe
-M=M-1
-A=M
+AM=M-1
 D=M
 @ARG
 M=D
 @endframe
-M=M-1
-A=M
+AM=M-1
 D=M
 @LCL
 M=D

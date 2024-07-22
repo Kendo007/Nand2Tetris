@@ -14,8 +14,7 @@ D=A
 @1           
 D=D+A
 @SP
-M=M-1
-A=M
+AM=M-1
 D=D+M
 A=D-M
 M=D-A
@@ -32,8 +31,7 @@ D=M
 @0              
 D=D+A
 @SP
-M=M-1
-A=M
+AM=M-1
 D=D+M
 A=D-M
 M=D-A
@@ -50,8 +48,7 @@ D=M
 @1              
 D=D+A
 @SP
-M=M-1
-A=M
+AM=M-1
 D=D+M
 A=D-M
 M=D-A
@@ -74,8 +71,7 @@ A=M-1
 M=D
 // sub  
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 M=M-D
@@ -85,8 +81,7 @@ D=M
 @0          
 D=D+A
 @SP
-M=M-1
-A=M
+AM=M-1
 D=D+M
 A=D-M
 M=D-A
@@ -136,8 +131,7 @@ A=M-1
 M=D
 // add 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 M=D+M
@@ -147,8 +141,7 @@ D=M
 @2
 D=D+A
 @SP
-M=M-1
-A=M
+AM=M-1
 D=D+M
 A=D-M
 M=D-A
@@ -171,8 +164,7 @@ A=M-1
 M=D
 // add 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 M=D+M
@@ -182,8 +174,7 @@ D=A
 @1 
 D=D+A
 @SP
-M=M-1
-A=M
+AM=M-1
 D=D+M
 A=D-M
 M=D-A
@@ -206,8 +197,7 @@ A=M-1
 M=D
 // sub 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 M=M-D
@@ -217,8 +207,7 @@ D=M
 @0          
 D=D+A
 @SP
-M=M-1
-A=M
+AM=M-1
 D=D+M
 A=D-M
 M=D-A

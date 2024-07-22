@@ -14,8 +14,7 @@ A=M-1
 M=D
 // eq 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 D=M-D
@@ -44,8 +43,7 @@ A=M-1
 M=D
 // eq 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 D=M-D
@@ -74,8 +72,7 @@ A=M-1
 M=D
 // eq 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 D=M-D
@@ -104,8 +101,7 @@ A=M-1
 M=D
 // lt 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 D=M-D
@@ -134,8 +130,7 @@ A=M-1
 M=D
 // lt 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 D=M-D
@@ -164,8 +159,7 @@ A=M-1
 M=D
 // lt 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 D=M-D
@@ -194,8 +188,7 @@ A=M-1
 M=D
 // gt 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 D=M-D
@@ -224,8 +217,7 @@ A=M-1
 M=D
 // gt 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 D=M-D
@@ -254,8 +246,7 @@ A=M-1
 M=D
 // gt 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 D=M-D
@@ -291,8 +282,7 @@ A=M-1
 M=D
 // add 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 M=D+M
@@ -305,8 +295,7 @@ A=M-1
 M=D
 // sub 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 M=M-D
@@ -316,8 +305,7 @@ A=M-1
 M=-M
 // and 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 M=D&M
@@ -330,8 +318,7 @@ A=M-1
 M=D
 // or 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 M=D|M

@@ -21,22 +21,19 @@ A=M-1
 M=D
 // pop static 8 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 @StaticTest.8
 M=D
 // pop static 3 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 @StaticTest.3
 M=D
 // pop static 1 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 @StaticTest.1
 M=D
@@ -56,8 +53,7 @@ A=M-1
 M=D
 // sub 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 M=M-D
@@ -70,8 +66,7 @@ A=M-1
 M=D
 // add 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 M=D+M

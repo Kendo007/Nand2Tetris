@@ -8,6 +8,8 @@ public class CodeTranslator {
     protected static BufferedWriter bw;
     private String fileName;
     private static String currFunction = "Sys.init";
+    private static boolean wroteReturn = false;
+    private static boolean wroteCall = false;
 
     private final static HashMap<String, String> baseAddress = new HashMap<>();
 
@@ -109,8 +111,7 @@ public class CodeTranslator {
     private void pop(String[] Command) throws IOException {
         if (Command[1].equals("static")) {
             write("@SP");
-            write("M=M-1");
-            write("A=M");
+            write("AM=M-1");
             write("D=M");
             write("@"+fileName+"."+Command[2]);
             write("M=D");
@@ -123,8 +124,7 @@ public class CodeTranslator {
         write("@"+Command[2]);
         write("D=D+A");
         write("@SP");
-        write("M=M-1");
-        write("A=M");
+        write("AM=M-1");
         write("D=D+M");    // D = addr + val
         write("A=D-M");    // A = addr + val - val
         write("M=D-A");    // RAM[addr] = addr + val - addr
@@ -170,8 +170,7 @@ public class CodeTranslator {
             }
         } else {                                // for all other operations that require 2 operators
             write("@SP");
-            write("M=M-1");
-            write("A=M");
+            write("AM=M-1");
             write("D=M");
             write("A=A-1");
 
@@ -259,7 +258,11 @@ public class CodeTranslator {
                 writeFunction(Command);
                 break;
             case "return":
-                writeReturn();
+                write("@RETURN");
+                write("0;JMP");
+
+                if (!wroteReturn)
+                    commonReturn();
                 break;
             default:
                 return false;
@@ -270,17 +273,43 @@ public class CodeTranslator {
 
     /** Writes the assembly code for calling the function and doing all the necessary manipulations */
     protected static void writeCall(String[] Command) throws IOException {
+        // Storing value of new ARG in temp variable R13
+        write("@" + Integer.valueOf(Command[2].strip()));
+        write("D=A");
+        write("@SP");
+        write("D=M-D");
+        write("@R13");
+        write("M=D");
+
+        // Pushing returnAddress on stack
         helperCall("@" + currFunction + "$ret." + callCount);
+
+        // Storing the function address in temp variable R14
+        write("@" + Command[1]);
+        write("D=A");
+        write("@R14");
+        write("M=D");
+        write("@FUNCTION");
+        write("0;JMP");
+
+        if (!wroteCall)
+            commonCall();
+
+        write("(" + currFunction + "$ret." + callCount + ")");
+        ++callCount;
+    }
+
+    /** Writes the common assembly code (Call subroutine) */
+    private static void commonCall() throws IOException {
+        write("(FUNCTION)");
         helperCall("@LCL");
         helperCall("@ARG");
         helperCall("@THIS");
         helperCall("@THAT");
 
-        // Setting up new ARG
-        write("@" + (5 + Integer.valueOf(Command[2].strip())));
-        write("D=A");
-        write("@SP");
-        write("D=M-D");
+        // Setting Up New ARG
+        write("@R13");
+        write("D=M");
         write("@ARG");
         write("M=D");
 
@@ -290,12 +319,11 @@ public class CodeTranslator {
         write("@LCL");
         write("M=D");
 
-        // Jumping to function
-        write("@" + Command[1]);
+        write("@R14");
+        write("A=M");
         write("0;JMP");
-        write("(" + currFunction + "$ret." + callCount + ")");
 
-        ++callCount;
+        wroteCall = true;
     }
 
     /** Assembly code for saving current Memory elements on the stack
@@ -335,8 +363,9 @@ public class CodeTranslator {
         }
     }
 
-    /** Writes the assembly code for returning and doing all the necessary manipulations */
-    private void writeReturn() throws IOException {
+    /** Writes the common assembly code (Return subroutine) */
+    private void commonReturn() throws IOException {
+        write("(RETURN)");
         write("@LCL");           // endframe = LCL
         write("D=M");
         write("@endframe");
@@ -367,6 +396,8 @@ public class CodeTranslator {
         write("@retAddr");      // goto retAddr
         write("A=M");
         write("0;JMP");
+
+        wroteReturn = true;
     }
 
     /** Writing code that will copy the saved memory elements to their original places
@@ -374,8 +405,7 @@ public class CodeTranslator {
      * */
     private void helperReturn(String addr) throws IOException {
         write("@endframe");
-        write("M=M-1");
-        write("A=M");
+        write("AM=M-1");
         write("D=M");
         write(addr);
         write("M=D");

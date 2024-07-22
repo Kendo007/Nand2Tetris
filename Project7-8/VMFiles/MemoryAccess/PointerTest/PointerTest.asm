@@ -11,8 +11,7 @@ D=A
 @0
 D=D+A
 @SP
-M=M-1
-A=M
+AM=M-1
 D=D+M
 A=D-M
 M=D-A
@@ -29,8 +28,7 @@ D=A
 @1
 D=D+A
 @SP
-M=M-1
-A=M
+AM=M-1
 D=D+M
 A=D-M
 M=D-A
@@ -47,8 +45,7 @@ D=M
 @2
 D=D+A
 @SP
-M=M-1
-A=M
+AM=M-1
 D=D+M
 A=D-M
 M=D-A
@@ -65,8 +62,7 @@ D=M
 @6
 D=D+A
 @SP
-M=M-1
-A=M
+AM=M-1
 D=D+M
 A=D-M
 M=D-A
@@ -92,8 +88,7 @@ A=M-1
 M=D
 // add 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 M=D+M
@@ -109,8 +104,7 @@ A=M-1
 M=D
 // sub 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 M=M-D
@@ -126,8 +120,7 @@ A=M-1
 M=D
 // add 
 @SP
-M=M-1
-A=M
+AM=M-1
 D=M
 A=A-1
 M=D+M
