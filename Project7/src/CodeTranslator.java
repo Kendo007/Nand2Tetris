@@ -62,6 +62,9 @@ public class CodeTranslator {
         }
     }
 
+    /** Writes the assembly code for all the memory commands
+     * @param Command Command you want to execute
+     * */
     private boolean memoryCommand(String[] Command) throws IOException {
         if (Command[0].equals("push")) {
             push(Command);
@@ -81,6 +84,9 @@ public class CodeTranslator {
         baseAddress.put("that", "@THAT");
     }
 
+    /** Returns the base address based on the hack specification
+     * @param Command Command you want to execute
+     * */
     private void getBaseAddress(String[] Command) throws IOException {
         if (baseAddress.containsKey(Command[1])) {
             write(baseAddress.get(Command[1]));
@@ -97,6 +103,9 @@ public class CodeTranslator {
         }
     }
 
+    /** Writes the assembly code to pop values from the stack
+     * @param Command Command you want to execute
+     * */
     private void pop(String[] Command) throws IOException {
         if (Command[1].equals("static")) {
             write("@SP");
@@ -121,6 +130,9 @@ public class CodeTranslator {
         write("M=D-A");    // RAM[addr] = addr + val - addr
     }
 
+    /** Writes the assembly code for pushing values to the stack
+     * @param Command Command you want to execute
+     * */
     private void push(String[] Command) throws IOException {
         if (Command[1].equals("constant")) {
             write("@"+Command[2]);
@@ -142,6 +154,10 @@ public class CodeTranslator {
         write("M=D");
     }
 
+    /** Writes the assembly code for all the arithmetic and logical commands
+     * @param Command Command you want to execute
+     * @return true/false based on if it wrote the command to the file
+     * */
     private boolean arthlogiCommand(String[] Command) throws IOException {
         if (Command[0].charAt(0) == 'n') {      // for not and neg operation
             write("@SP");
@@ -182,6 +198,9 @@ public class CodeTranslator {
         return true;
     }
 
+    /** Writes the assembly code required for comparing and pushing the appropriate answer to the stack 0 - false and -1 - true
+     * @param jumpCondition the condition based on which the jump should be decided
+     */
     private void booleanPush(String jumpCondition) throws IOException {
         write("D=M-D");
 
@@ -199,6 +218,10 @@ public class CodeTranslator {
         ++boolCount;
     }
 
+    /** Writes the assembly code for all the branching commands
+     * @param Command Command you want to execute
+     * @return true/false based on if it wrote the command to the file
+     * */
     private boolean branchingCommand(String[] Command) throws IOException {
         switch (Command[0]) {
             case "label":
@@ -223,6 +246,10 @@ public class CodeTranslator {
         return true;
     }
 
+    /** Writes the assembly code for all the function commands
+     * @param Command Command you want to execute
+     * @return true/false based on if it wrote the command to the file
+     * */
     private boolean functionCommand(String[] Command) throws IOException {
         switch (Command[0]) {
             case "call":
@@ -241,6 +268,7 @@ public class CodeTranslator {
         return true;
     }
 
+    /** Writes the assembly code for calling the function and doing all the necessary manipulations */
     protected static void writeCall(String[] Command) throws IOException {
         helperCall("@" + currFunction + "$ret." + callCount);
         helperCall("@LCL");
@@ -262,7 +290,7 @@ public class CodeTranslator {
         write("@LCL");
         write("M=D");
 
-        // Jumpig to function
+        // Jumping to function
         write("@" + Command[1]);
         write("0;JMP");
         write("(" + currFunction + "$ret." + callCount + ")");
@@ -270,6 +298,9 @@ public class CodeTranslator {
         ++callCount;
     }
 
+    /** Assembly code for saving current Memory elements on the stack
+     * @param addr The memory element you want to store
+     * */
     private static void helperCall(String addr) throws IOException {
         write(addr);
         if (addr.contains(".")) {
@@ -283,6 +314,7 @@ public class CodeTranslator {
         write("M=D");
     }
 
+    /** Writes the assembly code for starting a function and doing all the necessary manipulations */
     private void writeFunction(String[] Command) throws IOException {
         currFunction = Command[1];
         write("(" + Command[1] + ")");
@@ -303,6 +335,7 @@ public class CodeTranslator {
         }
     }
 
+    /** Writes the assembly code for returning and doing all the necessary manipulations */
     private void writeReturn() throws IOException {
         write("@LCL");           // endframe = LCL
         write("D=M");
@@ -336,7 +369,9 @@ public class CodeTranslator {
         write("0;JMP");
     }
 
-    /** Writing code that will copy the saved memory elements to their original places */
+    /** Writing code that will copy the saved memory elements to their original places
+     * @param addr the memory element you want to restore
+     * */
     private void helperReturn(String addr) throws IOException {
         write("@endframe");
         write("M=M-1");
