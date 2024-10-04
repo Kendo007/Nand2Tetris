@@ -8,8 +8,5 @@ public class Tests {
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
-
-        JackTokenizer.br.close();
-        JackTokenizer.bw.close();
     }
 }

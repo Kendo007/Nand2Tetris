@@ -1,9 +1,17 @@
 package compiler;
 
-import static compiler.JackTokenizer.br;
-import static compiler.JackTokenizer.bw;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 
 public class MyFileUtils {
+    private static BufferedReader br;
+    private static BufferedWriter bw;
+
+    protected static void setBrAndBw(BufferedReader br, BufferedWriter bw) {
+        MyFileUtils.br = br;
+        MyFileUtils.bw = bw;
+    }
+
     /**
      * Skips all the whitespaces and comments
      * @return the first non-whitespace character

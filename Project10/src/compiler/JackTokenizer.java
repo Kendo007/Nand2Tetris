@@ -4,21 +4,27 @@ import java.io.*;
 import static compiler.MyFileUtils.*;
 
 public class JackTokenizer {
-    protected static BufferedReader br;
-    protected static BufferedWriter bw;
+    private static BufferedReader br;
+    private static BufferedWriter bw;
 
     public static void start(String fileName) {
         try {
             br = new BufferedReader(new FileReader(fileName));
             bw = new BufferedWriter(new FileWriter(fileName.substring(0, fileName.lastIndexOf(".")) + "T.xml"));
 
+            setBrAndBw(br, bw);
+
             bw.write("<tokens>\n");
             compileClass();
             bw.write("</tokens>\n");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
+        try {
             br.close();
             bw.close();
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -303,23 +309,19 @@ public class JackTokenizer {
                 insideString = !insideString;
             } else if (c == '(') {
                 ++balanced;
-                sb.append(c);
             } else if (c == ')') {
                 --balanced;
-                sb.append(c);
             } else if (isOp(c)) {
-                if ((c == '-' || c == '~') && sb.isEmpty()) {
-                    sb.append(c);
-                } else if (balanced == 0) {
+                if (balanced == 0 && !((c == '-' || c == '~') && sb.isEmpty())) {
                     handleTerm(sb.toString());
                     printSymbol(c);
                     sb.setLength(0);
-                } else {
-                    sb.append(c);
+
+                    continue;
                 }
-            } else {
-                sb.append(c);
             }
+
+            sb.append(c);
         }
 
         if (!sb.isEmpty()) {
