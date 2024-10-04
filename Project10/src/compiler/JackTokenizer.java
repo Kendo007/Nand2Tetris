@@ -15,6 +15,9 @@ public class JackTokenizer {
             bw.write("<tokens>\n");
             compileClass();
             bw.write("</tokens>\n");
+
+            br.close();
+            bw.close();
         } catch (Exception e) {
             e.printStackTrace();
         }

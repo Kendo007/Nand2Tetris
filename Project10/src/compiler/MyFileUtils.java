@@ -1,55 +1,9 @@
 package compiler;
 
-import java.io.IOException;
-import java.util.HashSet;
-
 import static compiler.JackTokenizer.br;
 import static compiler.JackTokenizer.bw;
 
 public class MyFileUtils {
-    protected static final HashSet<String> KEYWORDS_AND_SYMBOLS = new HashSet<>() {{
-        add("class");
-        add("constructor");
-        add("function");
-        add("method");
-        add("field");
-        add("static");
-        add("var");
-        add("int");
-        add("char");
-        add("boolean");
-        add("void");
-        add("true");
-        add("false");
-        add("null");
-        add("this");
-        add("let");
-        add("do");
-        add("if");
-        add("else");
-        add("while");
-        add("return");
-        add("{");
-        add("}");
-        add("(");
-        add(")");
-        add("[");
-        add("]");
-        add(".");
-        add(",");
-        add(";");
-        add("+");
-        add("-");
-        add("*");
-        add("/");
-        add("&");
-        add("|");
-        add("<");
-        add(">");
-        add("=");
-        add("~");
-    }};
-
     private static char skipWhitespacesAndComments() throws Exception {
         char x;
 
@@ -100,23 +54,6 @@ public class MyFileUtils {
         do {
             sb.append(x);
         } while ((x = (char) br.read()) != c && br.ready());
-
-        return sb.toString().stripTrailing();
-    }
-
-    protected static String getUntilNotKeyWord() throws Exception {
-        char x = skipWhitespacesAndComments();
-
-        // Building the string by appending characters
-        StringBuilder sb = new StringBuilder();
-
-        do {
-            br.mark(1);
-            sb.append(x);
-            x = (char) br.read();
-        } while (!KEYWORDS_AND_SYMBOLS.contains(sb.toString()) && br.ready());
-
-        br.reset();
 
         return sb.toString().stripTrailing();
     }
