@@ -225,10 +225,10 @@ public class JackTokenizer {
         eat("(");
         printSymbol('(');
 
-        handleExpression(getUntil(')'));
-        printSymbol(')');
+        String s = getUntil('{');
+        handleExpression(s.substring(0, s.length() - 1));
 
-        eat("{");
+        printSymbol(')');
         printSymbol('{');
 
         handleStatements();
@@ -249,15 +249,81 @@ public class JackTokenizer {
         printSymbol(';');
     }
 
-    private static void handleExpression(String s) throws Exception {
+    private static boolean isOp(char c) {
+        return c == '+' || c == '-' || c == '*' || c == '/' || c == '&' || c == '|' || c == '<' || c == '>' || c == '=';
+    }
+
+    private static void handleTerm(String s) throws Exception {
         if (s.isEmpty()) {
             return;
         }
 
-        if (s.equals("this")) {
+        if (s.charAt(0) == '-' || s.charAt(0) == '~') {         // unary Op
+            printSymbol(s.charAt(0));
+            handleTerm(s.substring(1));
+        } else if (s.charAt(0) == '"' && s.charAt(s.length() - 1) == '"') {         // string constant
+            printStringConstant(s.substring(1, s.length() - 1));
+        } else if (Character.isDigit(s.charAt(0))) {                // integer constant
+            printIntConstant(s);
+        } else if (s.equals("true") || s.equals("false") || s.equals("null") || s.equals("this")) {      // keyword constant
             printKeyword(s);
-        } else {
-            printIdentifier(s);
+        } else if (s.charAt(0) == '(') {            // expression
+            printSymbol('(');
+            handleExpression(s.substring(1, s.length() - 1));
+            printSymbol(')');
+        } else {                        // varName | varName[expression] | subroutineCall
+            int i = s.indexOf('[');
+
+            if (i != -1) {
+                printIdentifier(s.substring(0, i));
+                printSymbol('[');
+                handleExpression(s.substring(i + 1, s.length() - 1));
+                printSymbol(']');
+            } else if (s.contains("(")) {
+                handleSubroutineCall(s);
+            } else {
+                printIdentifier(s);
+            }
+        }
+
+    }
+
+    private static void handleExpression(String s) throws Exception {
+        StringBuilder sb = new StringBuilder();
+        int n = s.length();
+        boolean insideString = false;
+        int balanced = 0;
+
+        for (int i = 0; i < n; ++i) {
+            char c = s.charAt(i);
+
+            if (Character.isWhitespace(c) && !insideString) {
+                continue;
+            } else if (c == '"') {
+                insideString = !insideString;
+            } else if (c == '(') {
+                ++balanced;
+                sb.append(c);
+            } else if (c == ')') {
+                --balanced;
+                sb.append(c);
+            } else if (isOp(c)) {
+                if ((c == '-' || c == '~') && sb.isEmpty()) {
+                    sb.append(c);
+                } else if (balanced == 0) {
+                    handleTerm(sb.toString());
+                    printSymbol(c);
+                    sb.setLength(0);
+                } else {
+                    sb.append(c);
+                }
+            } else {
+                sb.append(c);
+            }
+        }
+
+        if (!sb.isEmpty()) {
+            handleTerm(sb.toString());
         }
     }
 

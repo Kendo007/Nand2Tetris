@@ -4,6 +4,10 @@ import static compiler.JackTokenizer.br;
 import static compiler.JackTokenizer.bw;
 
 public class MyFileUtils {
+    /**
+     * Skips all the whitespaces and comments
+     * @return the first non-whitespace character
+     */
     private static char skipWhitespacesAndComments() throws Exception {
         char x;
 
@@ -58,6 +62,11 @@ public class MyFileUtils {
         return sb.toString().stripTrailing();
     }
 
+    /**
+     * Returns the substring from cursor position when it was called to the next whitespace character
+     * Skips all the comments and leading whitespaces
+     * @return the substring before whitespace
+     */
     protected static String getUntilNotWhiteSpace() throws Exception {
         char x = skipWhitespacesAndComments();
 
@@ -112,7 +121,29 @@ public class MyFileUtils {
 
     protected static void printSymbol(char c) throws Exception {
         bw.write("<symbol> ");
-        bw.write(c);
+
+        if (c == '<') {
+            bw.write("&lt;");
+        } else if (c == '>') {
+            bw.write("&gt;");
+        } else if (c == '&') {
+            bw.write("&amp;");
+        } else {
+            bw.write(c);
+        }
+
         bw.write(" </symbol>\n");
+    }
+
+    protected static void printIntConstant(String s) throws Exception {
+        bw.write("<integerConstant> ");
+        bw.write(s);
+        bw.write(" </integerConstant>\n");
+    }
+
+    protected static void printStringConstant(String s) throws Exception {
+        bw.write("<stringConstant> ");
+        bw.write(s);
+        bw.write(" </stringConstant>\n");
     }
 }
