@@ -1,4 +1,6 @@
 import java.io.*;
+import java.nio.file.Paths;
+import java.util.Objects;
 
 public class Parser {
     /** Reads VM commands line by line and sends it to codewriter for translation and writing */
@@ -8,11 +10,11 @@ public class Parser {
         File f = new File(file);
 
         if (f.isDirectory()) {
-            FileWriter fw = new FileWriter(file + ".asm");
+            FileWriter fw = new FileWriter(Paths.get(f.getAbsolutePath(), f.getName()+".asm").toFile());
             CodeTranslator.bw = new BufferedWriter(fw);
             writeInit();
 
-            for (String fileName : f.list()) {
+            for (String fileName : Objects.requireNonNull(f.list())) {
                 CodeTranslator c = new CodeTranslator();
 
                 if (fileName.endsWith(".vm")) {
