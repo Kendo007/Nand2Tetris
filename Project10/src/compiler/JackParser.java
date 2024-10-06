@@ -54,23 +54,29 @@ public class JackParser {
             }
 
             switch (s) {
-                case "static", "field" -> {
+                case "static":
+                case "field":
                     bw.write("<classVarDec>\n");
                     printKeyword(s);
                     handleVars();
                     bw.write("</classVarDec>\n");
-                }
-                case "constructor", "method", "function" -> {
+                    break;
+
+                case "constructor":
+                case "method":
+                case "function":
                     bw.write("<subroutineDec>\n");
                     printKeyword(s);
                     handleSubroutine();
                     bw.write("</subroutineDec>\n");
-                }
-                case "}" -> {
+                    break;
+
+                case "}":
                     printSymbol('}');
                     return;
-                }
-                default -> throw new Exception("Syntax Error!!");
+
+                default:
+                    throw new Exception("Syntax Error!!");
             }
         }
     }
@@ -172,57 +178,63 @@ public class JackParser {
             }
 
             switch (s) {
-                case "var" -> {
+                case "var":
                     bw.write("<varDec>\n");
                     printKeyword(s);
                     handleVars();
                     bw.write("</varDec>\n");
-                }
-                case "let" -> {
+                    break;
+
+                case "let":
                     bw.write("<letStatement>\n");
                     printKeyword(s);
                     handleLet();
                     bw.write("</letStatement>\n");
-                }
-                case "if" -> {
+                    break;
+
+                case "if":
                     bw.write("<ifStatement>\n");
                     printKeyword(s);
                     handleIfWhile();
-
                     checker = 1;
-                }
-                case "else" -> {
-                    if (checker != 0)
-                        throw new Exception("Syntax Error!!");
+                    break;
 
+                case "else":
+                    if (checker != 0) {
+                        throw new Exception("Syntax Error!!");
+                    }
                     printKeyword(s);
                     handleElse();
                     bw.write("</ifStatement>\n");
-                }
-                case "while" -> {
+                    break;
+
+                case "while":
                     bw.write("<whileStatement>\n");
                     printKeyword(s);
                     handleIfWhile();
                     bw.write("</whileStatement>\n");
-                }
-                case "do" -> {
+                    break;
+
+                case "do":
                     bw.write("<doStatement>\n");
                     printKeyword(s);
                     handleDo();
                     bw.write("</doStatement>\n");
-                }
-                case "return" -> {
+                    break;
+
+                case "return":
                     bw.write("<returnStatement>\n");
                     printKeyword(s);
                     handleReturn();
                     bw.write("</returnStatement>\n");
-                }
-                case "}" -> {
+                    break;
+
+                case "}":
                     bw.write("</statements>\n");
                     printSymbol('}');
                     return;
-                }
-                default -> {
+
+                default:
                     if (s.equals("return;")) {
                         bw.write("<returnStatement>\n");
                         printKeyword("return");
@@ -231,8 +243,9 @@ public class JackParser {
                     } else {
                         throw new Exception("Syntax Error!!");
                     }
-                }
+                    break;
             }
+
             --checker;
         }
     }

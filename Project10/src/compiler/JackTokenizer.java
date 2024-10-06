@@ -52,19 +52,25 @@ public class JackTokenizer {
             }
 
             switch (s) {
-                case "static", "field" -> {
+                case "static":
+                case "field":
                     printKeyword(s);
                     handleVars();
-                }
-                case "constructor", "method", "function" -> {
+                    break;
+
+                case "constructor":
+                case "method":
+                case "function":
                     printKeyword(s);
                     handleSubroutine();
-                }
-                case "}" -> {
+                    break;
+
+                case "}":
                     printSymbol('}');
                     return;
-                }
-                default -> throw new Exception("Syntax Error!!");
+
+                default:
+                    throw new Exception("Syntax Error!!");
             }
         }
     }
@@ -151,52 +157,59 @@ public class JackTokenizer {
             String s = getUntilNotWhiteSpace();
 
             switch (s) {
-                case "var" -> {
+                case "var":
                     printKeyword(s);
                     handleVars();
-                }
-                case "let" -> {
+                    break;
+
+                case "let":
                     printKeyword(s);
                     handleLet();
-                }
-                case "if" -> {
+                    break;
+
+                case "if":
                     printKeyword(s);
                     handleIfWhile();
-
                     checker = 1;
-                }
-                case "else" -> {
-                    if (checker != 0)
-                        throw new Exception("Syntax Error!!");
+                    break;
 
+                case "else":
+                    if (checker != 0) {
+                        throw new Exception("Syntax Error!!");
+                    }
                     printKeyword(s);
                     handleElse();
-                }
-                case "while" -> {
+                    break;
+
+                case "while":
                     printKeyword(s);
                     handleIfWhile();
-                }
-                case "do" -> {
+                    break;
+
+                case "do":
                     printKeyword(s);
                     handleDo();
-                }
-                case "return" -> {
+                    break;
+
+                case "return":
                     printKeyword(s);
                     handleReturn();
-                }
-                case "}" -> {
+                    break;
+
+                case "}":
                     printSymbol('}');
                     return;
-                }
-                default -> {
+
+                default:
                     if (s.equals("return;")) {
                         printKeyword("return");
                         printSymbol(';');
                     } else {
                         throw new Exception("Syntax Error!!");
                     }
-                }
+                    break;
             }
+
             --checker;
         }
     }
