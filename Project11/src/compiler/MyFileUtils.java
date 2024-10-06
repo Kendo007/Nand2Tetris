@@ -1,15 +1,15 @@
 package compiler;
 
-import java.io.PushbackReader;
-import java.io.BufferedWriter;
+import static compiler.JackCompiler.pr;
+import static compiler.JackCompiler.bw;    // TO DELETE
 
 public class MyFileUtils {
-    private static PushbackReader pr;
+    private MyFileUtils() {}
 
-    protected static void setPrAndBw(PushbackReader pr, BufferedWriter bw) {
-        MyFileUtils.pr = pr;
-    }
-
+    /**
+     * Skips the comments in the file
+     * @return true if a comment was skipped, false otherwise
+     */
     private static boolean skipComments() throws Exception {
         char y = (char) pr.read();
 
@@ -124,5 +124,47 @@ public class MyFileUtils {
             x = (char) pr.read();
             ++i;
         }
+    }
+
+
+    /** TO DELETE **/
+    protected static void printKeyword(String s) throws Exception {
+        bw.write("<keyword> ");
+        bw.write(s);
+        bw.write(" </keyword>\n");
+    }
+
+    protected static void printIdentifier(String s) throws Exception {
+        bw.write("<identifier> ");
+        bw.write(s);
+        bw.write(" </identifier>\n");
+    }
+
+    protected static void printSymbol(char c) throws Exception {
+        bw.write("<symbol> ");
+
+        if (c == '<') {
+            bw.write("&lt;");
+        } else if (c == '>') {
+            bw.write("&gt;");
+        } else if (c == '&') {
+            bw.write("&amp;");
+        } else {
+            bw.write(c);
+        }
+
+        bw.write(" </symbol>\n");
+    }
+
+    protected static void printIntConstant(String s) throws Exception {
+        bw.write("<integerConstant> ");
+        bw.write(s);
+        bw.write(" </integerConstant>\n");
+    }
+
+    protected static void printStringConstant(String s) throws Exception {
+        bw.write("<stringConstant> ");
+        bw.write(s);
+        bw.write(" </stringConstant>\n");
     }
 }

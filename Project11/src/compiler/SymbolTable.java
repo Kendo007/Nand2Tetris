@@ -1,6 +1,7 @@
 package compiler;
 
 import java.util.HashMap;
+import compiler.Enums.Kind;
 
 /**
  * <h1>SymbolTable</h1>
@@ -12,30 +13,19 @@ import java.util.HashMap;
  * </p>
  * <p>
  * The SymbolTable class contains methods to define a new entry to the symbol table, get the
- * number of variables of a certain kind, get the kind of a variable, get the type of a variable,
+ * number of variables of a certain kind, get the kind of a variable, get the datatype of a variable,
  * and get the index of a variable.
  * </p>
  */
 public class SymbolTable {
-    /** The Kind enum is used to store the kind of variable */
-    protected enum Kind {
-        STATIC("static"), FIELD("field"), ARG("argument"), LCL("local");
-        private final String name;
-
-        Kind(String s) { this.name = s; }
-
-        @Override
-        public String toString() { return this.name; }
-    }
-
-    /** The Data class is used to store the type, kind, and index of a variable */
-    protected static class Data {
-        protected String type;
+    /** The Data class is used to store the datatype, kind, and index of a variable */
+    private static class Data {
+        protected String datatype;
         protected Kind kind;
         protected int index;
 
-        Data(String type, Kind kind, int index) {
-            this.type = type;
+        Data(String datatype, Kind kind, int index) {
+            this.datatype = datatype;
             this.kind = kind;
             this.index = index;
         }
@@ -45,6 +35,13 @@ public class SymbolTable {
     private static final HashMap<String, Data> classTable = new HashMap<>();
     private static final HashMap<String, Data> subroutineTable = new HashMap<>();
 
+    /** Starts a new class scope (i.e., resets the class’s symbol table) */
+    protected static void startClass() {
+        fieldCount = 0;
+        staticCount = 0;
+        classTable.clear();
+    }
+
     /**  Starts a new subroutine scope (i.e., resets the subroutine’s symbol table) */
     protected static void startSubroutine() {
         varCount = 0;
@@ -52,7 +49,7 @@ public class SymbolTable {
         subroutineTable.clear();
     }
 
-    /** Defines a new identifier of a given name, type, and kind and assigns it a running index */
+    /** Defines a new identifier of a given name, datatype, and kind and assigns it a running index */
     protected static void define(String name, String type, Kind kind) {
         if (kind == Kind.STATIC) {
             classTable.put(name, new Data(type, kind, staticCount++));
@@ -89,12 +86,12 @@ public class SymbolTable {
         }
     }
 
-    /** Returns the type of the named identifier in the current scope */
+    /** Returns the datatype of the named identifier in the current scope */
     protected static String typeOf(String name) {
         if (subroutineTable.containsKey(name)) {
-            return subroutineTable.get(name).type;
+            return subroutineTable.get(name).datatype;
         } else if (classTable.containsKey(name)) {
-            return classTable.get(name).type;
+            return classTable.get(name).datatype;
         } else {
             return null;
         }
