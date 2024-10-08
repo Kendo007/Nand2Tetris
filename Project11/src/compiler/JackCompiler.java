@@ -1,6 +1,8 @@
 package compiler;
 
 import java.io.*;
+import java.util.Objects;
+import java.util.Stack;
 
 import static compiler.MyFileUtils.*;
 import static compiler.SymbolTable.*;
@@ -9,20 +11,35 @@ import static compiler.VMWriter.*;
 
 public class JackCompiler {
 
+    private static int labelCounter = 0;
     protected static PushbackReader pr;
     protected static BufferedWriter bw;
     protected static String className;
 
     public static void main(String[] args) {
-        start(args[0]);
+        File f = new File(args[0]);
+
+        if (f.isDirectory()) {
+            for (File file : Objects.requireNonNull(f.listFiles())) {
+                if (file.getName().endsWith(".jack")) {
+                    start(file.getAbsolutePath());
+                }
+            }
+        } else {
+            start(args[0]);
+        }
     }
 
     public static void start(String fileName) {
         try {
-            pr = new PushbackReader(new FileReader(fileName));
+            int BUFFER_SIZE = 7;
+            labelCounter = 0;
+
+            pr = new PushbackReader(new FileReader(fileName), BUFFER_SIZE);
             bw = new BufferedWriter(new FileWriter(fileName.substring(0, fileName.lastIndexOf(".")) + ".vm"));
 
-            compileClass();
+            bw.write("// Compiled: " + fileName.substring(fileName.lastIndexOf('/') + 1));
+            handleClass();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -38,22 +55,26 @@ public class JackCompiler {
     /**
      * Compiles the class
      */
-    private static void compileClass() throws Exception {
-        SymbolTable.startClass();
+    private static void handleClass() throws Exception {
+        startClass();
 
         eat("class");
 
         className = getUntil('{');
 
-        compileClassVars();
+        handleClassVars();
     }
 
     /**
      * Compiles the class variables and builds the symbol table
      */
-    private static void compileClassVars() throws Exception {
+    private static void handleClassVars() throws Exception {
         while (true) {
             String s = getUntilNotWhiteSpace();
+
+            if (s.equals("\uFFFF")) {
+                return;
+            }
 
             switch (s) {
                 case "static":
@@ -64,11 +85,10 @@ public class JackCompiler {
                     break;
 
                 case "}":
-                    printSymbol('}');
                     return;
 
                 default:
-                    compileClassSubRoutines(s);
+                    handleClassSubRoutines(s);
                     break;
             }
         }
@@ -100,15 +120,17 @@ public class JackCompiler {
      * Compiles the subroutine declarations
      * @param s The previous subroutine type (constructor, function, method)
      */
-    private static void compileClassSubRoutines(String s) throws Exception {
+    private static void handleClassSubRoutines(String s) throws Exception {
         while (true) {
             switch (s) {
                 case "constructor":
+                    handleSubroutine(SubRoutineKind.CONSTRUCTOR);
+                    break;
                 case "function":
-                    handleSubroutine(false);
+                    handleSubroutine(SubRoutineKind.FUNCTION);
                     break;
                 case "method":
-                    handleSubroutine(true);
+                    handleSubroutine(SubRoutineKind.METHOD);
                     break;
 
                 case "}":
@@ -125,10 +147,10 @@ public class JackCompiler {
     /**
      * Handles the subroutine declaration and builds the symbol table
      */
-    private static void handleSubroutine(boolean isMethod) throws Exception {
+    private static void handleSubroutine(SubRoutineKind sub) throws Exception {
         startSubroutine();
 
-        if (isMethod) {
+        if (sub == SubRoutineKind.METHOD) {
             define("this", className, Kind.ARG);
         }
 
@@ -137,22 +159,23 @@ public class JackCompiler {
         String subRoutineName = getUntil('(');
         String paramList = getUntil(')');
 
-        compileParameterList(paramList);
+        handleParameterList(paramList);
 
         eat("{");
-        compileSubRoutineBody(subRoutineName);
+
+        handleSubRoutineBody(subRoutineName, sub);
     }
 
     /**
      * Compiles the parameter list of a subroutine
      * @param s The parameter list
      */
-    private static void compileParameterList(String s) throws Exception {
+    private static void handleParameterList(String s) throws Exception {
         if (s.isEmpty()) {
             return;
         }
 
-        String[] arr = s.split(", *");
+        String[] arr = s.split(",[ \r\n]*");
 
         for (String str : arr) {
             String[] temp = str.split(" +");
@@ -164,16 +187,26 @@ public class JackCompiler {
      * Compiles the body of a subroutine
      * @param subRoutineName The name of the subroutine
      */
-    private static void compileSubRoutineBody(String subRoutineName) throws Exception {
+    private static void handleSubRoutineBody(String subRoutineName, SubRoutineKind sub) throws Exception {
         while (true) {
             String s = getUntilNotWhiteSpace();
 
             if (s.equals("var")) {
                 handleVars(Kind.LCL);
             } else {
-                writeFunction(subRoutineName, varCount(Kind.LCL));
+                writeFunction(className + '.' + subRoutineName, varCount(Kind.LCL));
+
+                if (sub == SubRoutineKind.CONSTRUCTOR) {
+                    writePush(Segment.CONST, varCount(Kind.FIELD));
+                    writeCall("Memory.alloc", 1);
+                    writePop(Segment.POINTER, 0);
+                } else if (sub == SubRoutineKind.METHOD) {
+                    writePush(Segment.ARG, 0);
+                    writePop(Segment.POINTER, 0);
+                }
 
                 if (!s.equals("}")) {
+                    goBack(s);
                     handleStatements();
                 }
                 return;
@@ -182,27 +215,22 @@ public class JackCompiler {
     }
 
     private static void handleStatements() throws Exception {
-        int checker = -1;
+        int checker = -1, ifLabel = -1;
 
         while (true) {
             String s = getUntilNotWhiteSpace();
 
             if (checker == 0 && !s.equals("else")) {
-                bw.write("</ifStatement>\n");
+                writeLabel(className + '_' + ifLabel);
             }
 
             switch (s) {
                 case "let":
-                    bw.write("<letStatement>\n");
-                    printKeyword(s);
                     handleLet();
-                    bw.write("</letStatement>\n");
                     break;
 
                 case "if":
-                    bw.write("<ifStatement>\n");
-                    printKeyword(s);
-                    handleIfWhile();
+                    ifLabel = handleIf();
                     checker = 1;
                     break;
 
@@ -210,43 +238,33 @@ public class JackCompiler {
                     if (checker != 0) {
                         throw new Exception("Syntax Error!!");
                     }
-                    printKeyword(s);
+
+                    int elseLabel = labelCounter++;
+                    writeGoto(className + '_' + elseLabel);
+                    writeLabel(className + '_' + ifLabel);
                     handleElse();
-                    bw.write("</ifStatement>\n");
+                    writeLabel(className + '_' + elseLabel);
                     break;
 
                 case "while":
-                    bw.write("<whileStatement>\n");
-                    printKeyword(s);
-                    handleIfWhile();
-                    bw.write("</whileStatement>\n");
+                    handleWhile();
                     break;
 
                 case "do":
-                    bw.write("<doStatement>\n");
-                    printKeyword(s);
                     handleDo();
-                    bw.write("</doStatement>\n");
                     break;
 
                 case "return":
-                    bw.write("<returnStatement>\n");
-                    printKeyword(s);
                     handleReturn();
-                    bw.write("</returnStatement>\n");
                     break;
 
                 case "}":
-                    bw.write("</statements>\n");
-                    printSymbol('}');
                     return;
 
                 default:
                     if (s.equals("return;")) {
-                        bw.write("<returnStatement>\n");
-                        printKeyword("return");
-                        printSymbol(';');
-                        bw.write("</returnStatement>\n");
+                        writePush(Segment.CONST, 0);
+                        writeReturn();
                     } else {
                         throw new Exception("Syntax Error!!");
                     }
@@ -259,46 +277,64 @@ public class JackCompiler {
 
     private static void handleLet() throws Exception {
         String s = getUntil('=');
+        String expr = getUntil(';');
+
+        handleExpression(expr);
 
         if (s.endsWith("]")) {
             int i = s.indexOf('[');
+            String identifier = s.substring(0, i);
 
-            printIdentifier(s.substring(0, i));
-            printSymbol('[');
+            writePush(segmentOf(identifier), indexOf(identifier));
             handleExpression(s.substring(i + 1, s.length() - 1));
-            printSymbol(']');
-        } else {
-            printIdentifier(s);
-        }
+            writeArithmetic(Command.ADD);
 
-        printSymbol('=');
-        handleExpression(getUntil(';'));
-        printSymbol(';');
+            writePop(Segment.POINTER, 1);
+            writePop(Segment.THAT, 0);
+        } else {
+            writePop(segmentOf(s), indexOf(s));
+        }
     }
 
     private static void handleElse() throws Exception {
         eat("{");
-        printSymbol('{');
-
         handleStatements();
     }
 
-    private static void handleIfWhile() throws Exception {
+    private static int handleIf() throws Exception {
         eat("(");
-        printSymbol('(');
 
         String s = getUntil('{');
         handleExpression(s.substring(0, s.length() - 1));
+        writeArithmetic(Command.NOT);
 
-        printSymbol(')');
-        printSymbol('{');
+        int ifLabel = labelCounter++;
+        writeIf(className + '_' + ifLabel);
 
         handleStatements();
+        return ifLabel;
+    }
+
+    private static void handleWhile() throws Exception {
+        eat("(");
+        String s = getUntil('{');
+
+        int startLabel = labelCounter++;
+        int endLabel = labelCounter++;
+
+        writeLabel(className + '_' + startLabel);
+        handleExpression(s.substring(0, s.length() - 1));
+        writeArithmetic(Command.NOT);
+
+        writeIf(className + '_' + endLabel);
+        handleStatements();
+        writeGoto(className + '_' + startLabel);
+        writeLabel(className + '_' + endLabel);
     }
 
     private static void handleDo() throws Exception {
         handleSubroutineCall(getUntil(';'));
-        printSymbol(';');
+        writePop(Segment.TEMP, 0);
     }
 
     private static void handleReturn() throws Exception {
@@ -308,123 +344,223 @@ public class JackCompiler {
             handleExpression(s);
         }
 
-        printSymbol(';');
+        writeReturn();
     }
 
     private static boolean isOp(char c) {
-        return c == '+' || c == '-' || c == '*' || c == '/' || c == '&' || c == '|' || c == '<' || c == '>' || c == '=';
+        return c == '+' || c == '-' || c == '*' || c == '/' || c == '&' || c == '|' || c == '<' || c == '>' || c == '=' || c == '~';
     }
 
     private static void handleTerm(String s) throws Exception {
-        bw.write("<term>\n");
         if (s.isEmpty()) {
             return;
         }
 
         if (s.charAt(0) == '-' || s.charAt(0) == '~') {         // unary Op
-            printSymbol(s.charAt(0));
             handleTerm(s.substring(1));
-        } else if (s.charAt(0) == '"' && s.charAt(s.length() - 1) == '"') {         // string constant
-            printStringConstant(s.substring(1, s.length() - 1));
+            if (s.charAt(0) == '-') {
+                writeArithmetic(Command.NEG);
+            } else {
+                writeArithmetic(Command.NOT);
+            }
+        } else if (s.charAt(0) == '"' && s.charAt(s.length() - 1) == '"') {
+            writePush(Segment.CONST, s.length() - 2);
+            writeCall("String.new", 1);
+
+            for (int i = 1; i < s.length() - 1; ++i) {
+                writePush(Segment.CONST, s.charAt(i));
+                writeCall("String.appendChar", 2);
+            }
         } else if (Character.isDigit(s.charAt(0))) {                // integer constant
-            printIntConstant(s);
-        } else if (s.equals("true") || s.equals("false") || s.equals("null") || s.equals("this")) {      // keyword constant
-            printKeyword(s);
-        } else if (s.charAt(0) == '(') {            // expression
-            printSymbol('(');
+            writePush(Segment.CONST, Integer.parseInt(s));
+        } else if (s.equals("true")) {
+            writePush(Segment.CONST, 1);
+            writeArithmetic(Command.NEG);
+        } else if (s.equals("false") || s.equals("null")) {
+            writePush(Segment.CONST, 0);
+        } else if (s.equals("this")) {
+            writePush(Segment.POINTER, 0);
+        } else if (s.charAt(0) == '(') {                         // (expression)
             handleExpression(s.substring(1, s.length() - 1));
-            printSymbol(')');
         } else {                        // varName | varName[expression] | subroutineCall
             int i = s.indexOf('[');
 
             if (i != -1) {
-                printIdentifier(s.substring(0, i));
-                printSymbol('[');
+                String identifier = s.substring(0, i);
                 handleExpression(s.substring(i + 1, s.length() - 1));
-                printSymbol(']');
+
+                writePush(segmentOf(identifier), indexOf(identifier));
+                writeArithmetic(Command.ADD);
+
+                writePop(Segment.POINTER, 1);
+                writePush(Segment.THAT, 0);
             } else if (s.contains("(")) {
                 handleSubroutineCall(s);
             } else {
-                printIdentifier(s);
+                writePush(segmentOf(s), indexOf(s));
             }
         }
+    }
 
-        bw.write("</term>\n");
+    private static int priority(char c) {
+        if (c == '(') {
+            return -1;
+        } else if (c == '*' || c == '/') {
+            return 4;
+        } else if (c == '+' || c == '-') {
+            return 3;
+        } else if (c == '>' || c == '<') {
+            return 2;
+        } else if (c == '|' || c == '&') {
+            return 1;
+        } else {
+            return 0;
+        }
     }
 
     private static void handleExpression(String s) throws Exception {
-        bw.write("<expression>\n");
-
+        Stack<Character> symbols = new Stack<>();
         StringBuilder sb = new StringBuilder();
+
         int n = s.length();
-        boolean insideString = false;
-        int balanced = 0;
+        boolean prevSymbol = true;
 
         for (int i = 0; i < n; ++i) {
             char c = s.charAt(i);
 
-            if (Character.isWhitespace(c) && !insideString) {
+            if (Character.isWhitespace(c)) {
                 continue;
             } else if (c == '"') {
-                insideString = !insideString;
-            } else if (c == '(') {
-                ++balanced;
-            } else if (c == ')') {
-                --balanced;
-            } else if (isOp(c)) {
-                if (balanced == 0 && !((c == '-' || c == '~') && sb.isEmpty())) {
-                    handleTerm(sb.toString());
-                    printSymbol(c);
-                    sb.setLength(0);
+                sb.append(c);
+                do {
+                    c = s.charAt(++i);
+                    sb.append(c);
 
+                } while (c != '"');
+
+                handleTerm(sb.toString());
+                sb.setLength(0);
+            } else if (c == '(') {
+                if (prevSymbol)
+                    symbols.push(c);
+                else {
+                    int balanced = 1;
+
+                    while (balanced != 0) {
+                        sb.append(s.charAt(i++));
+
+                        if (s.charAt(i) == '(') {
+                            ++balanced;
+                        } else if (s.charAt(i) == ')') {
+                            --balanced;
+                        }
+                    }
+
+                    sb.append(')');
+                    handleTerm(sb.toString());
+                    sb.setLength(0);
+                }
+            } else if (c == '[') {
+                int balanced = 1;
+
+                do {
+                    sb.append(c);
+                    c = s.charAt(++i);
+
+                    if (c == '[') {
+                        ++balanced;
+                    } else if (c == ']') {
+                        --balanced;
+                    }
+                } while (balanced != 0);
+
+                sb.append(']');
+            } else if (c == ')') {
+                handleExpression(sb.toString());
+                sb.setLength(0);
+
+                while (!symbols.isEmpty()) {
+                    char top = symbols.pop();
+
+                    if (top == '(') {
+                        break;
+                    }
+
+                    writeArithmetic(top);
+                }
+            } else if (isOp(c)) {
+                if ((c == '-' || c == '~') && prevSymbol) {     // condition for not unary expression
+                    sb.append(c);
+                    prevSymbol = false;
                     continue;
                 }
-            }
 
-            sb.append(c);
+                handleTerm(sb.toString());
+                sb.setLength(0);
+
+                while (!symbols.isEmpty() && priority(symbols.peek()) >= priority(c)) {
+                    writeArithmetic(symbols.pop());
+                }
+
+                symbols.push(c);
+                prevSymbol = true;
+            } else {
+                sb.append(c);
+                prevSymbol = false;
+            }
         }
 
         if (!sb.isEmpty()) {
             handleTerm(sb.toString());
         }
 
-        bw.write("</expression>\n");
+        while (!symbols.isEmpty()) {
+            writeArithmetic(symbols.pop());
+        }
     }
 
-    private static void handleExpressionList(String s) throws Exception {
-        bw.write("<expressionList>\n");
+    private static int handleExpressionList(String s) throws Exception {
         if (s.isEmpty()) {
-            bw.write("</expressionList>\n");
-            return;
+            return 0;
         }
 
         String[] arr = s.split(",");
-        boolean first = true;
 
         for (String str : arr) {
-            if (!first)
-                printSymbol(',');
-
             handleExpression(str.stripLeading());
-            first = false;
         }
 
-        bw.write("</expressionList>\n");
+        return arr.length;
     }
 
     private static void handleSubroutineCall(String s) throws Exception {
         int i = s.indexOf('.');
+        String subRoutineName = "";
+        boolean isMethod = false;
 
         if (i != -1) {
-            printIdentifier(s.substring(0, i));
-            printSymbol('.');
+            String identifier = s.substring(0, i);
+            Segment segment = segmentOf(identifier);
+
+            if (segment != null) {
+                writePush(segment, indexOf(identifier));
+                subRoutineName += typeOf(identifier) + '.';
+
+                isMethod = true;
+            } else {
+                subRoutineName += identifier + '.';
+            }
+        } else {
+            writePush(Segment.POINTER, 0);
+            subRoutineName += className + '.';
+
+            isMethod = true;
         }
 
         int j = s.indexOf('(');
-        printIdentifier(s.substring(i + 1, j));
-        printSymbol('(');
+        subRoutineName += s.substring(i + 1, j);
 
-        handleExpressionList(s.substring(j + 1, s.length() - 1));
-        printSymbol(')');
+        int n = handleExpressionList(s.substring(j + 1, s.length() - 1));
+        writeCall(subRoutineName, isMethod ? n + 1 : n);
     }
 }

@@ -1,7 +1,6 @@
 package compiler;
 
 import static compiler.JackCompiler.pr;
-import static compiler.JackCompiler.bw;    // TO DELETE
 
 public class MyFileUtils {
     private MyFileUtils() {}
@@ -63,13 +62,17 @@ public class MyFileUtils {
 
         // Building the string by appending characters
         StringBuilder sb = new StringBuilder();
-        boolean insideString = false;
 
         do {
             if (x == '/' && skipComments()) {
                 continue;
             } else if (x == '"') {
-                insideString = !insideString;
+                sb.append(x);
+                do {
+                    sb.append(x = (char) pr.read());
+                } while (x != '"');
+
+                continue;
             }
 
             sb.append(x);
@@ -126,45 +129,10 @@ public class MyFileUtils {
         }
     }
 
-
-    /** TO DELETE **/
-    protected static void printKeyword(String s) throws Exception {
-        bw.write("<keyword> ");
-        bw.write(s);
-        bw.write(" </keyword>\n");
-    }
-
-    protected static void printIdentifier(String s) throws Exception {
-        bw.write("<identifier> ");
-        bw.write(s);
-        bw.write(" </identifier>\n");
-    }
-
-    protected static void printSymbol(char c) throws Exception {
-        bw.write("<symbol> ");
-
-        if (c == '<') {
-            bw.write("&lt;");
-        } else if (c == '>') {
-            bw.write("&gt;");
-        } else if (c == '&') {
-            bw.write("&amp;");
-        } else {
-            bw.write(c);
-        }
-
-        bw.write(" </symbol>\n");
-    }
-
-    protected static void printIntConstant(String s) throws Exception {
-        bw.write("<integerConstant> ");
-        bw.write(s);
-        bw.write(" </integerConstant>\n");
-    }
-
-    protected static void printStringConstant(String s) throws Exception {
-        bw.write("<stringConstant> ");
-        bw.write(s);
-        bw.write(" </stringConstant>\n");
+    /**
+     * Unreads the given string to the file
+     */
+    protected static void goBack(String s) throws Exception {
+        pr.unread((s + ' ').toCharArray());
     }
 }

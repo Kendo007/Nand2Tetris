@@ -35,4 +35,9 @@ public class Enums {
         @Override
         public String toString() { return this.name; }
     }
+
+    /** The SubRoutineKind enum is used to store the kind of subroutine */
+    protected enum SubRoutineKind {
+        CONSTRUCTOR, FUNCTION, METHOD
+    }
 }

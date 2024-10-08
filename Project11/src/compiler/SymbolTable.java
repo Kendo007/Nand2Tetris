@@ -1,7 +1,7 @@
 package compiler;
 
 import java.util.HashMap;
-import compiler.Enums.Kind;
+import compiler.Enums.*;
 
 /**
  * <h1>SymbolTable</h1>
@@ -32,21 +32,21 @@ public class SymbolTable {
     }
 
     private static int varCount = 0, argCount = 0, fieldCount = 0, staticCount = 0;
-    private static final HashMap<String, Data> classTable = new HashMap<>();
-    private static final HashMap<String, Data> subroutineTable = new HashMap<>();
+    private static HashMap<String, Data> classTable = new HashMap<>();
+    private static HashMap<String, Data> subroutineTable = new HashMap<>();
 
     /** Starts a new class scope (i.e., resets the class’s symbol table) */
     protected static void startClass() {
         fieldCount = 0;
         staticCount = 0;
-        classTable.clear();
+        classTable = new HashMap<>();
     }
 
     /**  Starts a new subroutine scope (i.e., resets the subroutine’s symbol table) */
     protected static void startSubroutine() {
         varCount = 0;
         argCount = 0;
-        subroutineTable.clear();
+        subroutineTable = new HashMap<>();
     }
 
     /** Defines a new identifier of a given name, datatype, and kind and assigns it a running index */
@@ -75,17 +75,6 @@ public class SymbolTable {
         }
     }
 
-    /** Returns the kind of the named identifier in the current scope. If the identifier is unknown in the current scope, returns null */
-    protected static Kind kindOf(String name) {
-        if (subroutineTable.containsKey(name)) {
-            return subroutineTable.get(name).kind;
-        } else if (classTable.containsKey(name)) {
-            return classTable.get(name).kind;
-        } else {
-            return null;
-        }
-    }
-
     /** Returns the datatype of the named identifier in the current scope */
     protected static String typeOf(String name) {
         if (subroutineTable.containsKey(name)) {
@@ -105,6 +94,32 @@ public class SymbolTable {
             return classTable.get(name).index;
         } else {
             return -1;
+        }
+    }
+
+    protected static Segment segmentOf(String name) {
+        if (subroutineTable.containsKey(name)) {
+            Kind kind = subroutineTable.get(name).kind;
+
+            if (kind == Kind.ARG) {
+                return Segment.ARG;
+            } else if (kind == Kind.LCL) {
+                return Segment.LCL;
+            } else {
+                return null;
+            }
+        } else if (classTable.containsKey(name)) {
+            Kind kind = classTable.get(name).kind;
+
+            if (kind == Kind.STATIC) {
+                return Segment.STATIC;
+            } else if (kind == Kind.FIELD) {
+                return Segment.THIS;
+            } else {
+                return null;
+            }
+        } else {
+            return null;
         }
     }
 }
